@@ -5,16 +5,16 @@
 <base target="_top">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>COT Field Survey | บริษัท คอนซัลแทนท์ ออฟ เทคโนโลยี จำกัด</title>
-<meta name="theme-color" content="#052e24">
+<meta name="theme-color" content="#0a2260">
 <link rel="icon" href="https://www.cot.co.th/wp-content/uploads/2023/05/Logo-40th-COT.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-:root{--g:#0b6e4f;--gd:#084f39;--gl:#e4f1ea;--paper:#f5f8f6;--ink:#1c2a25;--mut:#5c6b64;--line:#cfdad4;--card:#fff;
---ok:#0b6e4f;--up:#1b64b0;--pend:#8a6d00;--fail:#b3261e}
+:root{--g:#1d4ba3;--gd:#0f2f73;--gl:#e5ecf8;--paper:#f4f7fb;--ink:#14223a;--mut:#56657a;--line:#d0d9e6;--card:#fff;
+--ok:#0b7a4f;--up:#2f6fd0;--pend:#8a6d00;--fail:#b3261e}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 "Noto Sans Thai",system-ui,sans-serif;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
-header{background:linear-gradient(120deg,#052e24,#0b6e4f);color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
+header{background:linear-gradient(120deg,#0a2260,#1d4ba3);color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
 header h1{font-size:1rem;margin:0;flex:1;min-width:0}
 header small{display:block;font-weight:400;font-size:.95rem;line-height:1.35;overflow-wrap:anywhere}header .pc{display:block;font-weight:700;font-size:1.05rem}
 header .pn{display:block;font-size:.85rem;opacity:.92}
@@ -51,7 +51,7 @@ th{color:var(--mut);font-weight:600}tr.r{cursor:pointer}tr.r:hover{background:va
 dialog{border:0;border-radius:10px;padding:18px;max-width:440px;width:92%}dialog::backdrop{background:rgba(0,0,0,.4)}
 .th{width:112px;height:112px;object-fit:cover;border-radius:6px;display:block}
 .hide{display:none}
-@media(min-width:760px){nav{position:static;border:0;background:var(--gd);justify-content:center}nav button{flex:none;color:#cfe6dc;padding:11px 22px;border-top:0;border-bottom:3px solid transparent}nav button.on{background:none;color:#fff;border-bottom-color:#f2b705}body{padding-bottom:0}header{position:static}}
+@media(min-width:760px){nav{position:static;border:0;background:var(--gd);justify-content:center}nav button{flex:none;color:#cfdcf3;padding:11px 22px;border-top:0;border-bottom:3px solid transparent}nav button.on{background:none;color:#fff;border-bottom-color:#f2b705}body{padding-bottom:0}header{position:static}}
 button.pb{font:inherit;font-weight:600;background:#fff;color:var(--g);border:2px dashed var(--g);border-radius:10px;padding:16px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
 button.pb svg{width:30px;height:30px}button.pb:active{background:var(--gl)}
 .okbox{background:var(--gl);color:var(--gd);border:1px solid var(--g);border-radius:6px;padding:8px 12px;font-size:.88rem;margin:12px 0 0;font-weight:600}
@@ -63,8 +63,9 @@ input[readonly]{background:#eef3f0;color:var(--mut)}
 @media(max-width:600px){table{font-size:.8rem}th,td{padding:8px 5px}td:first-child{word-break:break-all}}
 
 /* ---- COT look ---- */
-:root{--dk:#052e24}
-body{background:radial-gradient(1200px 400px at 100% -80px,#dcece4 0,transparent 70%),var(--paper);background-attachment:fixed}
+.hero input::placeholder{color:#6b7a90}
+:root{--dk:#0a2260}
+body{background:radial-gradient(1200px 400px at 100% -80px,#dce6f6 0,transparent 70%),var(--paper);background-attachment:fixed}
 .logo{flex:none;background:#fff;border-radius:10px;padding:4px 9px;display:grid;place-items:center;min-width:46px;height:46px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .logo img{display:block;height:34px;width:auto;max-width:120px}
 .logo b{display:none;color:var(--g);font-weight:700;letter-spacing:.04em}
@@ -73,30 +74,30 @@ header h1{font-weight:400}
 .co{display:block;font-size:.78rem;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:560px){.co{display:none}}
 #chg{border:1px solid rgba(255,255,255,.3)}
-.hero{position:relative;overflow:hidden;border-radius:20px;padding:28px 22px 22px;margin-bottom:22px;color:#fff;background:linear-gradient(135deg,#052e24 0%,#0b6e4f 68%,#1a9a6f 100%);box-shadow:0 14px 30px -18px rgba(5,46,36,.7)}
+.hero{position:relative;overflow:hidden;border-radius:20px;padding:28px 22px 22px;margin-bottom:22px;color:#fff;background:linear-gradient(135deg,#0a2260 0%,#1d4ba3 68%,#3a74d6 100%);box-shadow:0 14px 30px -18px rgba(10,34,96,.7)}
 .hero .topo{position:absolute;right:-30px;top:-20px;height:140%;width:80%;pointer-events:none}
 .hero>*:not(.topo){position:relative}
 .hero h2{font-size:1.75rem;line-height:1.25;margin:0 0 4px;font-weight:700}
 .hero .hco{margin:0 0 6px;font-weight:600;font-size:.95rem}
 .hero .hs{margin:0 0 18px;opacity:.88;font-size:.92rem;max-width:34em}
-.hero input{border:0;border-radius:999px;padding:14px 20px;box-shadow:0 6px 16px -4px rgba(0,0,0,.35)}
-.card{border-radius:14px;box-shadow:0 1px 2px rgba(5,46,36,.06),0 10px 24px -14px rgba(5,46,36,.22)}
+.hero input{color:var(--ink);border:0;border-radius:999px;padding:14px 20px;box-shadow:0 6px 16px -4px rgba(0,0,0,.35)}
+.card{border-radius:14px;box-shadow:0 1px 2px rgba(10,34,96,.06),0 10px 24px -14px rgba(10,34,96,.22)}
 .sec{margin-top:12px}
 h3.sh{font-size:1rem;margin:0 0 2px;border-left:4px solid var(--g);padding-left:10px;line-height:1.3}
 .proj{display:flex;align-items:center;gap:12px;padding:14px 16px;transition:transform .15s,box-shadow .15s,border-color .15s}
-.proj:hover,.proj:focus-visible{transform:translateY(-2px);box-shadow:0 12px 26px -12px rgba(5,46,36,.4)}
+.proj:hover,.proj:focus-visible{transform:translateY(-2px);box-shadow:0 12px 26px -12px rgba(10,34,96,.4)}
 .proj .pcode{flex:none;background:var(--gl);color:var(--gd);font-weight:700;border-radius:8px;padding:5px 10px;font-size:.85rem}
 .proj .pname{flex:1;min-width:0;overflow-wrap:anywhere}
 .proj .go{color:var(--g);font-size:1.6rem;line-height:1}
 .stat{border-top:4px solid var(--line)}
 .stat.al{border-top-color:var(--up)}.stat.al b{color:var(--up)}
-.stat.ok{border-top-color:var(--ok)}
+.stat.ok{border-top-color:var(--ok)}.stat.ok b{color:var(--ok)}
 .stat.wt{border-top-color:#e0b100}.stat.wt b{color:var(--pend)}
 .stat b{font-variant-numeric:tabular-nums}
 .pg{display:flex;justify-content:space-between;align-items:baseline}.pg b{color:var(--g);font-size:1.2rem}
 .bar.big{height:10px;border-radius:5px}
 .Completed.chip{background:#e4f1ea}.Uploading.chip{background:#e3eefa}.Pending.chip{background:#fbf3d0}.Failed.chip{background:#fbe7e5}
-button.p{background:linear-gradient(180deg,#0e815c,#0b6e4f);box-shadow:0 4px 12px -4px rgba(11,110,79,.65)}
+button.p{background:linear-gradient(180deg,#2557b8,#1d4ba3);box-shadow:0 4px 12px -4px rgba(29,75,163,.6)}
 button.p:active{transform:translateY(1px)}
 button.p.saved:disabled{background:var(--gd)}
 button.s,button.p,button.d{border-radius:10px}
@@ -104,7 +105,7 @@ dialog{border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
 nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.82rem}
 nav button svg{width:22px;height:22px}
 @media(min-width:760px){nav button{flex-direction:row;gap:8px;font-size:.92rem}nav button svg{width:18px;height:18px}}
-footer{max-width:980px;margin:8px auto 0;padding:18px 16px 26px;display:flex;gap:14px;align-items:center;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem;line-height:1.6}
+footer{max-width:980px;margin:8px auto 0;padding:16px 16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:.72rem;line-height:1.6}footer p{margin:0}footer .logo{display:inline-grid;height:34px;min-width:0;padding:3px 8px;margin-bottom:8px}footer .logo img{height:26px}
 footer b{color:var(--ink)}footer a{color:var(--g)}
 footer .logo{box-shadow:none;border:1px solid var(--line)}
 .g3{grid-template-columns:repeat(3,1fr)}
@@ -115,8 +116,7 @@ header .pn{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
 </head>
 <body>
 <header>
-  <span class="logo"><img src="https://www.cot.co.th/wp-content/uploads/2023/05/Logo-40th-COT.png" alt="COT" onerror="this.parentNode.classList.add('nologo')"><b>COT</b></span>
-  <h1><span class="co">บริษัท คอนซัลแทนท์ ออฟ เทคโนโลยี จำกัด</span><small id="sub">เลือกโครงการเพื่อเริ่มงาน</small></h1>
+  <h1><small id="sub">เลือกโครงการเพื่อเริ่มงาน</small></h1>
   <button id="chg" class="hide">เปลี่ยนโครงการ</button>
 </header>
 <nav id="nav" class="hide">
@@ -203,7 +203,7 @@ header .pn{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
 </main>
 <footer>
   <span class="logo"><img src="https://www.cot.co.th/wp-content/uploads/2023/05/Logo-40th-COT.png" alt="COT" onerror="this.parentNode.classList.add('nologo')"><b>COT</b></span>
-  <div><b>บริษัท คอนซัลแทนท์ ออฟ เทคโนโลยี จำกัด (COT)</b><br>Consultants of Technology Co., Ltd.<br>© <span id="yr"></span> สงวนลิขสิทธิ์ All rights reserved · <a href="https://www.cot.co.th/" target="_blank" rel="noopener">www.cot.co.th</a><br>39 Ladprao 124 Road, Phlapphla, Wang Thonglang, Bangkok 10310</div>
+  <p><b>บริษัท คอนซัลแทนท์ ออฟ เทคโนโลยี จำกัด (COT)</b> · Consultants of Technology Co., Ltd. · © <span id="yr"></span> สงวนลิขสิทธิ์ All rights reserved · 39 Ladprao 124 Road, Phlapphla, Wang Thonglang, Bangkok 10310 · <a href="https://www.cot.co.th/" target="_blank" rel="noopener">www.cot.co.th</a></p>
 </footer>
 
 <dialog id="pw"><form id="pwf">
@@ -303,12 +303,12 @@ function loadProjects(){api('projects').then(function(r){PROJECTS=r.projects;pli
  $('plist').innerHTML='<p class="hint">โหลดรายการโครงการไม่ได้: '+esc(e.message)+'</p>'})}
 
 var pending=null,asking=false;
-function tryLogin(p,pw){PASS=pw;cur=p;return api('login').then(function(r){try{if(pw)localStorage.setItem('pw_'+p.code,pw)}catch(e){}enter(r.project,r.fields)}).catch(function(e){cur=null;PASS='';throw e})}
-function ask(c){if(asking)return;asking=true;pending=PROJECTS.filter(function(p){return p.code===c})[0];var l=[''],last=null;try{l.push(localStorage.getItem('pw_'+c))}catch(e){}
- l=l.filter(function(x,i){return x!=null&&l.indexOf(x)===i});$('sub').textContent='กำลังเข้าโครงการ...';
+function tryLogin(p,pw){PASS=pw;cur=p;return api('login').then(function(r){try{if(pw&&pw!==p.code)localStorage.setItem('pw_'+p.code,pw)}catch(e){}enter(r.project,r.fields)}).catch(function(e){cur=null;PASS='';throw e})}
+function ask(c){if(asking)return;asking=true;pending=PROJECTS.filter(function(p){return p.code===c})[0];var l=[c],last=null;try{l.push(localStorage.getItem('pw_'+c))}catch(e){}
+ l=l.filter(function(x,i){return x&&l.indexOf(x)===i});$('sub').textContent='กำลังเข้าโครงการ...';
  (function nx(i){if(i>=l.length){asking=false;
    if(last&&/ไม่มีสัญญาณ|หมดเวลา|ผิดรูปแบบ/.test(last.message)){$('sub').textContent='เข้าโครงการไม่ได้: '+last.message;return}
-   $('sub').textContent='เลือกโครงการเพื่อเริ่มงาน';$('pwt').textContent=pending.code+' '+pending.name;$('pwi').value='';$('pwi').type='password';$('pws').checked=false;$('pwm').textContent='โครงการนี้ยังตั้งรหัสผ่านไว้ที่เซิร์ฟเวอร์';$('pw').showModal();$('pwi').focus();return}
+   $('sub').textContent='เลือกโครงการเพื่อเริ่มงาน';$('pwt').textContent=pending.code+' '+pending.name;$('pwi').value='';$('pwi').type='password';$('pws').checked=false;$('pwm').textContent=last&&last.message?last.message:'';$('pw').showModal();$('pwi').focus();return}
   tryLogin(pending,l[i]).then(function(){asking=false}).catch(function(e){last=e;nx(i+1)})})(0)}
 $('pwf').onsubmit=function(e){e.preventDefault();var v=$('pwi').value;if(!v)return;var b=$('pwok');b.disabled=true;$('pwm').textContent='กำลังตรวจสอบ...';
  tryLogin(pending,v).then(function(){$('pw').close()}).catch(function(err){$('pwm').textContent=err.message;$('pwi').select()}).then(function(){b.disabled=false})};
