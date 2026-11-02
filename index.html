@@ -46,6 +46,7 @@ th{color:var(--mut);font-weight:600}tr.r{cursor:pointer}tr.r:hover{background:va
 .ph i{width:48px;height:48px;border-radius:6px;background:var(--gl);flex:none;display:grid;place-items:center;color:var(--g);font-style:normal;font-size:.75rem}
 .bar{height:6px;background:var(--gl);border-radius:3px;overflow:hidden;margin-top:5px}.bar div{height:100%;width:0;background:var(--g);transition:width .25s}
 dialog{border:0;border-radius:10px;padding:18px;max-width:440px;width:92%}dialog::backdrop{background:rgba(0,0,0,.4)}
+.th{width:112px;height:112px;object-fit:cover;border-radius:6px;display:block}
 .hide{display:none}
 @media(min-width:760px){nav{position:static;border:0;background:var(--gd);justify-content:center}nav button{flex:none;color:#cfe6dc;padding:11px 22px;border-top:0;border-bottom:3px solid transparent}nav button.on{background:none;color:#fff;border-bottom-color:#f2b705}body{padding-bottom:0}header{position:static}}
 </style>
@@ -59,7 +60,7 @@ dialog{border:0;border-radius:10px;padding:18px;max-width:440px;width:92%}dialog
   <button data-p="home" class="on">หน้าหลัก</button><button data-p="survey">สำรวจ</button><button data-p="map">แผนที่</button><button data-p="user">ผู้ใช้งาน</button>
 </nav>
 <main>
-<div class="demo">รอบที่ 2: เชื่อม Google Sheets/Drive จริงผ่าน Apps Script (ยังไม่มี EXIF พิกัดภาพ ซึ่งอยู่ในรอบที่ 4)</div>
+<div class="demo">รอบที่ 3: แก้ไขรายการเต็มรูปแบบและแสดงภาพจริง (ยังไม่มี EXIF พิกัดภาพ ซึ่งอยู่ในรอบที่ 4)</div>
 
 <section id="p-pick">
   <h2>เลือกโครงการ</h2>
@@ -133,9 +134,21 @@ dialog{border:0;border-radius:10px;padding:18px;max-width:440px;width:92%}dialog
   <div class="row" style="margin-top:14px"><button class="s" id="ded">แก้ไข</button><button class="d" id="ddel">ลบ</button><button class="s" id="dcl">ปิด</button></div>
   <p class="hint" id="dm" role="status"></p></dialog>
 
+<dialog id="ed" style="max-height:90vh;overflow:auto"><h2 style="margin-top:0">แก้ไขรายการ</h2>
+  <label for="ecode" style="margin-top:0">รหัสแก้ไข</label><input id="ecode" autocomplete="off">
+  <label for="etype">ประเภทการสำรวจ</label><select id="etype"></select>
+  <label for="esur">ชื่อผู้สำรวจ</label><input id="esur">
+  <label for="edesc">รายละเอียด</label><textarea id="edesc"></textarea>
+  <div id="edyn"></div>
+  <label>พิกัด</label><div class="row"><input id="elat" aria-label="ละติจูด"><input id="elng" aria-label="ลองจิจูด"></div>
+  <label>ภาพถ่าย (ติ๊กภาพที่ต้องการลบ)</label><div id="eph"></div>
+  <label for="efiles">เพิ่มภาพ (รวมไม่เกิน 5 ภาพ)</label><input id="efiles" type="file" accept="image/*" multiple>
+  <div class="row" style="margin-top:14px"><button class="s" id="ecl">ยกเลิก</button><button class="p" id="esv">บันทึกการแก้ไข</button></div>
+  <p class="hint" id="em" role="status"></p></dialog>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-var API_URL='https://script.google.com/macros/s/AKfycbwU1LRMxd44giEL_c4HyLVIuQJ6HNevwaP-bJtQGjlEgufpw8BRH0Lk1AdQS-AxMAL2/exec';
+var API_URL='ใส่ URL ของ Web app จาก Apps Script (ลงท้ายด้วย /exec)';
 var $=function(i){return document.getElementById(i)};
 var PROJECTS=[],S=[],cur=null,PASS='',map=null,layer=null,tile={},pin=null,pend={},det=null;
 var col={Completed:'#0b6e4f',Uploading:'#1b64b0',Pending:'#8a6d00',Failed:'#b3261e'};
@@ -182,7 +195,7 @@ function home(){$('hname').textContent=cur?cur.name:'';var d=S.filter(function(r
  $('s-all').textContent=S.length;$('s-done').textContent=d;$('s-wait').textContent=S.length-d;
  $('recent').innerHTML=S.slice(0,5).map(function(r){return'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><span class="chip '+r[3]+'">'+r[3]+'</span></td></tr>'}).join('')||'<tr><td colspan="4">ยังไม่มีรายการ</td></tr>'}
 
-function newSurvey(){$('sid').value='S-'+cur.code+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function newSurvey(){$('sid').value='S-'+cur.code.replace(/[^A-Za-z0-9]/g,'')+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
  $('sdt').value=new Date().toLocaleString('th-TH');$('smsg').textContent='';$('sdesc').value='';$('files').value='';$('plistph').innerHTML='';$('lat').value=$('lng').value=$('acc').value='';
  (cur.fields||[]).forEach(function(f){$('f_'+f.key).value=''})}
 $('uname').oninput=function(){$('sname').value=$('uname').value};
@@ -239,19 +252,52 @@ function draw(){if(!layer)return;layer.clearLayers();var v=vis();
  document.querySelectorAll('tr.r').forEach(function(t){t.onclick=function(){detail(S[t.dataset.i])}})}
 $('fst').onchange=$('fq').oninput=draw;
 
-function detail(r){det=r;$('dt').textContent=r[0]+' · '+r[1];$('dm').textContent='';
+function b64url(b64){var s=atob(b64),a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return URL.createObjectURL(new Blob([a],{type:'image/jpeg'}))}
+function loadImgs(list,sid,k){k=k||0;if(k>=list.length||!det||det[0]!==sid)return;var p=list[k];
+ if(p.status!=='Completed')return loadImgs(list,sid,k+1);
+ api('getPhoto',{surveyId:sid,photoId:p.id}).then(function(x){var e=$('im'+k);if(e&&det&&det[0]===sid){var u=b64url(x.data);e.innerHTML='<a href="'+u+'" target="_blank"><img class="th" alt="'+p.name+'" src="'+u+'"></a>'}})
+ .catch(function(){}).then(function(){loadImgs(list,sid,k+1)})}
+function detail(r){det=r;det.photos=null;$('dt').textContent=r[0]+' · '+r[1];$('dm').textContent='';
  var c=r[10]||{},extra=(cur.fields||[]).map(function(f){return c[f.key]?'<p class="hint">'+f.label+': '+c[f.key]+'</p>':''}).join('');
- $('db').innerHTML='<p><span class="chip '+r[3]+'">'+r[3]+'</span> ผู้สำรวจ: '+r[2]+'</p><p>'+r[7]+'</p>'+extra+'<p class="hint">พิกัด '+r[5]+', '+r[6]+'</p><p><b>ภาพถ่าย '+r[4]+'/'+r[9]+' ภาพ</b></p><div id="dph"></div>'+
+ $('db').innerHTML='<p><span class="chip '+r[3]+'">'+r[3]+'</span> ผู้สำรวจ: '+r[2]+' · '+fmt(r[8])+'</p><p>'+r[7]+'</p>'+extra+'<p class="hint">พิกัด '+r[5]+', '+r[6]+'</p><p><b>ภาพถ่าย '+r[4]+'/'+r[9]+' ภาพ</b></p><div id="dph"></div>'+
   (r[3]!=='Completed'?'<button class="p" id="rt" style="margin-top:10px">Retry อัปโหลดภาพที่ค้าง</button>':'');
- api('getSurvey',{surveyId:r[0]}).then(function(x){$('dph').innerHTML=x.photos.map(function(p,i){return'<div class="ph"><i>ภาพ '+(i+1)+'</i><span class="hint">'+p.name+' <span class="chip '+p.status+'">'+p.status+'</span></span></div>'}).join('')}).catch(function(){});
+ api('getSurvey',{surveyId:r[0]}).then(function(x){if(det!==r)return;det.photos=x.photos;
+  $('dph').innerHTML=x.photos.map(function(p,i){return'<div class="ph"><div id="im'+i+'" style="flex:none"><i>ภาพ '+(i+1)+'</i></div><span class="hint">'+p.name+' <span class="chip '+p.status+'">'+p.status+'</span></span></div>'}).join('');
+  loadImgs(x.photos,r[0])}).catch(function(){});
  if($('rt'))$('rt').onclick=function(){var l=pend[r[0]];
-  if(!l){$('dm').textContent='ภาพที่ค้างไม่อยู่ในหน้านี้แล้ว (รีเฟรชหน้า) ต้องส่งภาพใหม่ในรอบถัดไป';return}
+  if(!l){$('dm').textContent='ภาพที่ค้างไม่อยู่ในหน้านี้แล้ว (รีเฟรชหน้า) ให้ลบภาพที่ค้างแล้วเพิ่มภาพใหม่ในหน้าแก้ไข';return}
   $('dm').textContent='กำลังส่งภาพที่ค้าง...';
   sendAll(r[0],l,false).then(function(f){if(f.length)pend[r[0]]=f;else delete pend[r[0]];$('dm').textContent=f.length?'ยังส่งไม่ครบ '+f.length+' ภาพ':'ส่งครบแล้ว';loadSurveys()})};
  $('det').showModal()}
 $('dcl').onclick=function(){$('det').close()};
-$('ded').onclick=function(){var c=prompt('กรอกรหัสแก้ไขของรายการนี้');if(!c)return;var d=prompt('แก้รายละเอียด',det[7]);if(d===null)return;
- api('updateSurvey',{surveyId:det[0],editCode:c,description:d}).then(function(){$('dm').textContent='แก้ไขแล้ว';loadSurveys()}).catch(function(e){$('dm').textContent=e.message})};
+
+$('ded').onclick=function(){var r=det;if(!r.photos){$('dm').textContent='กำลังโหลดรายการภาพ รอสักครู่แล้วกดอีกครั้ง';return}
+ $('ecode').value='';$('efiles').value='';$('em').textContent='';
+ $('etype').innerHTML=cur.types.map(function(t){return'<option'+(t===r[1]?' selected':'')+'>'+t+'</option>'}).join('');
+ $('esur').value=r[2]==='-'?'':r[2];$('edesc').value=r[7];$('elat').value=r[5];$('elng').value=r[6];
+ var c=r[10]||{};
+ $('edyn').innerHTML=(cur.fields||[]).map(function(f){var id='e_'+f.key,v=c[f.key]||'',x;
+  if(f.type==='select')x='<select id="'+id+'"><option value="">เลือก</option>'+f.options.map(function(o){return'<option'+(o===v?' selected':'')+'>'+o+'</option>'}).join('')+'</select>';
+  else x='<input id="'+id+'" type="'+(f.type==='number'?'number':'text')+'" value="'+String(v).replace(/"/g,'&quot;')+'">';
+  return'<label for="'+id+'">'+f.label+'</label>'+x}).join('');
+ $('eph').innerHTML=r.photos.map(function(p){return'<label style="font-weight:400;margin:6px 0"><input type="checkbox" class="rm" value="'+p.id+'" style="width:auto"> '+p.name+'</label>'}).join('')||'<p class="hint">ยังไม่มีภาพ</p>';
+ $('ed').showModal()};
+$('ecl').onclick=function(){$('ed').close()};
+$('esv').onclick=function(){var code=$('ecode').value.trim();if(!code){$('em').textContent='กรอกรหัสแก้ไข';return}
+ var rm=[].slice.call(document.querySelectorAll('.rm:checked')).map(function(x){return x.value}),files=[].slice.call($('efiles').files);
+ if(det.photos.length-rm.length+files.length>5){$('em').textContent='รวมภาพต้องไม่เกิน 5 ภาพ (เพิ่มได้อีก '+(5-det.photos.length+rm.length)+' ภาพ)';return}
+ if(files.some(function(f){return f.size>10*1048576})){$('em').textContent='มีภาพเกิน 10 MB';return}
+ var custom={};(cur.fields||[]).forEach(function(f){custom[f.key]=$('e_'+f.key).value});
+ var sid=det[0];$('esv').disabled=true;$('em').textContent='กำลังบันทึก...';
+ Promise.all(files.map(resize)).then(function(data){
+  var add=files.map(function(f,i){return{photoId:'P'+sid.slice(2)+'-e'+Date.now().toString(36)+i,name:f.name,data:data[i]}});
+  return api('updateSurvey',{surveyId:sid,editCode:code,type:$('etype').value,surveyor:$('esur').value.trim(),description:$('edesc').value.trim(),
+   lat:$('elat').value,lng:$('elng').value,custom:custom,removePhotoIds:rm,addPhotos:add.map(function(x){return{photoId:x.photoId,name:x.name}})})
+  .then(function(){return sendAll(sid,add,false)}).then(function(fail){
+   if(fail.length)pend[sid]=(pend[sid]||[]).concat(fail);
+   $('em').textContent=fail.length?'บันทึกแล้ว แต่ส่งภาพไม่ครบ '+fail.length+' ภาพ กด Retry ที่หน้ารายละเอียด':'บันทึกการแก้ไขแล้ว';
+   return loadSurveys().then(function(){setTimeout(function(){$('ed').close();$('det').close()},900)})})
+ }).catch(function(e){$('em').textContent=e.message}).then(function(){$('esv').disabled=false})};
 $('ddel').onclick=function(){var c=prompt('กรอกรหัสแก้ไขเพื่อลบรายการนี้');if(!c||!confirm('ลบรายการ '+det[0]+' ?'))return;
  api('deleteSurvey',{surveyId:det[0],editCode:c}).then(function(){$('det').close();loadSurveys()}).catch(function(e){$('dm').textContent=e.message})};
 
