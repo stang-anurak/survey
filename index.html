@@ -13,8 +13,9 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 "Noto Sans Thai",system-ui,sans-serif;padding-bottom:64px}
 header{background:var(--g);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
-header h1{font-size:1.05rem;margin:0;flex:1}
-header small{display:block;font-weight:400;opacity:.85;font-size:.78rem}
+header h1{font-size:.78rem;margin:0;flex:1;min-width:0}
+header small{display:block;font-weight:400;opacity:.9;font-size:.78rem;line-height:1.4;overflow-wrap:anywhere}
+header .pn{font-size:.68rem;opacity:.9}
 #chg{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:6px;padding:7px 11px;font:inherit;font-size:.85rem;cursor:pointer}
 nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:1000}
 nav button{flex:1;border:0;background:none;padding:10px 4px 9px;font:inherit;font-size:.82rem;color:var(--mut);cursor:pointer;border-top:3px solid transparent}
@@ -57,7 +58,7 @@ button.p.saved:disabled{opacity:1;background:var(--gd)}
 </head>
 <body>
 <header>
-  <h1>Field Survey<small id="sub">เลือกโครงการเพื่อเริ่มงาน</small></h1>
+  <h1><small id="sub">เลือกโครงการเพื่อเริ่มงาน</small></h1>
   <button id="chg" class="hide">เปลี่ยนโครงการ</button>
 </header>
 <nav id="nav" class="hide">
@@ -218,7 +219,7 @@ function ask(c){pending=PROJECTS.filter(function(p){return p.code===c})[0];var l
   tryLogin(pending,l[i]).catch(function(){nx(i+1)})})(0)}
 $('pwf').onsubmit=function(e){if(!(e.submitter&&e.submitter.value==='ok'&&$('pwi').value))return;
  tryLogin(pending,$('pwi').value).catch(function(err){alert(err.message)})};
-function enter(p,fields){cur=p;$('sub').textContent=p.code+' · '+p.name;$('nav').classList.remove('hide');$('chg').classList.remove('hide');
+function enter(p,fields){cur=p;$('sub').innerHTML=esc(p.code)+' · <span class="pn">'+esc(p.name)+'</span>';$('nav').classList.remove('hide');$('chg').classList.remove('hide');
  $('stype').innerHTML='<option value="">ไม่ระบุ</option>'+p.types.map(function(t){return'<option>'+esc(t)+'</option>'}).join('');
  $('dyn').innerHTML=fields.map(function(f){var id='f_'+f.key,c;
   if(f.type==='select')c='<select id="'+id+'"><option value="">เลือก</option>'+f.options.map(function(o){return'<option>'+esc(o)+'</option>'}).join('')+'</select>';
