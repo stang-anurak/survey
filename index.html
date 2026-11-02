@@ -248,7 +248,7 @@ function sendAll(sid,list,ui){var fail=[],i=0;
  return new Promise(function(done){(function next(){if(i>=list.length)return done(fail);
   var it=list[i],k=i++;if(ui)mark(k,'Uploading',40);
   api('uploadPhoto',{surveyId:sid,photoId:it.photoId,data:it.data,photoLat:it.lat,photoLng:it.lng,gpsSource:it.src}).then(function(){if(ui)mark(k,'Completed',100)})
-  .catch(function(){fail.push(it);if(ui)mark(k,'Failed',100)}).then(next)})()})}
+  .catch(function(e){it.err=String(e&&e.message||e);fail.push(it);if(ui)mark(k,'Failed',100)}).then(next)})()})}
 
 $('save').onclick=function(){
  if(!$('lat').value||!$('lng').value){$('smsg').textContent='ยังไม่มีพิกัดจุดสำรวจ';return}
@@ -264,7 +264,7 @@ $('save').onclick=function(){
   .then(function(r){$('smsg').textContent='กำลังอัปโหลดภาพ...';
    return sendAll(sid,list,true).then(function(fail){
     if(fail.length){pend[sid]=fail;savePend()}
-    $('smsg').textContent='บันทึกแล้ว รหัส '+sid+(r.editCode?' · รหัสแก้ไข: '+r.editCode+' (แสดงครั้งเดียว จดไว้)':'')+(fail.length?' · ส่งภาพไม่ครบ '+fail.length+' ภาพ กด Retry ในหน้าแผนที่':'');
+    $('smsg').textContent='บันทึกแล้ว รหัส '+sid+(r.editCode?' · รหัสแก้ไข: '+r.editCode+' (แสดงครั้งเดียว จดไว้)':'')+(fail.length?' · ส่งภาพไม่ครบ '+fail.length+' ภาพ ('+fail[0].err+') กด Retry ในหน้าแผนที่':'');
     if(!fail.length)setTimeout(function(){},0);return loadSurveys()})})
  }).catch(function(e){$('smsg').textContent='ไม่สำเร็จ: '+e.message}).then(function(){$('save').disabled=false})};
 
@@ -298,7 +298,7 @@ function detail(r){det=r;det.photos=null;$('dt').textContent=r[0]+' · '+r[1];$(
  if($('rt'))$('rt').onclick=function(){var l=pend[r[0]];
   if(!l){$('dm').textContent='ภาพที่ค้างไม่อยู่ในหน้านี้แล้ว (รีเฟรชหน้า) ให้ลบภาพที่ค้างแล้วเพิ่มภาพใหม่ในหน้าแก้ไข';return}
   $('dm').textContent='กำลังส่งภาพที่ค้าง...';
-  sendAll(r[0],l,false).then(function(f){if(f.length)pend[r[0]]=f;else delete pend[r[0]];savePend();$('dm').textContent=f.length?'ยังส่งไม่ครบ '+f.length+' ภาพ':'ส่งครบแล้ว';loadSurveys()})};
+  sendAll(r[0],l,false).then(function(f){if(f.length)pend[r[0]]=f;else delete pend[r[0]];savePend();$('dm').textContent=f.length?'ยังส่งไม่ครบ '+f.length+' ภาพ: '+f[0].err:'ส่งครบแล้ว';loadSurveys()})};
  $('det').showModal()}
 $('dcl').onclick=function(){$('det').close()};
 
@@ -326,7 +326,7 @@ $('esv').onclick=function(){var code=$('ecode').value.trim();if(!code){$('em').t
    lat:$('elat').value,lng:$('elng').value,custom:custom,removePhotoIds:rm,addPhotos:add.map(function(x){return{photoId:x.photoId,name:x.name}})})
   .then(function(){return sendAll(sid,add,false)}).then(function(fail){
    if(fail.length){pend[sid]=(pend[sid]||[]).concat(fail);savePend()}
-   $('em').textContent=fail.length?'บันทึกแล้ว แต่ส่งภาพไม่ครบ '+fail.length+' ภาพ กด Retry ที่หน้ารายละเอียด':'บันทึกการแก้ไขแล้ว';
+   $('em').textContent=fail.length?'บันทึกแล้ว แต่ส่งภาพไม่ครบ '+fail.length+' ภาพ ('+fail[0].err+') กด Retry ที่หน้ารายละเอียด':'บันทึกการแก้ไขแล้ว';
    return loadSurveys().then(function(){setTimeout(function(){$('ed').close();$('det').close()},900)})})
  }).catch(function(e){$('em').textContent=e.message}).then(function(){$('esv').disabled=false})};
 $('ddel').onclick=function(){var c=prompt('กรอกรหัสแก้ไขเพื่อลบรายการนี้');if(!c||!confirm('ลบรายการ '+det[0]+' ?'))return;
