@@ -87,7 +87,6 @@ button.p.saved:disabled{opacity:1;background:var(--gd)}
 <section id="p-survey" class="hide">
   <h2>บันทึกการสำรวจ</h2>
   <div class="card">
-    <div class="row"><div><label style="margin-top:0">รหัสรายการ</label><input id="sid" readonly></div><div><label style="margin-top:0">วันที่และเวลา</label><input id="sdt" readonly></div></div>
     <label for="stype">ประเภทการสำรวจ (ไม่บังคับ)</label><select id="stype"></select>
     <label for="sname">ชื่อผู้สำรวจ (ไม่บังคับ)</label><input id="sname">
     <label for="sdesc">รายละเอียด</label><textarea id="sdesc"></textarea>
@@ -100,6 +99,7 @@ button.p.saved:disabled{opacity:1;background:var(--gd)}
     <input id="cam" type="file" accept="image/*" capture="environment" class="hide">
     <input id="files" type="file" accept="image/*,.heic,.heif" multiple class="hide">
     <div id="plistph"></div>
+    <div class="row" style="margin-top:14px"><div><label style="margin-top:0">รหัสรายการ</label><input id="sid" readonly></div><div><label style="margin-top:0">วันที่และเวลา</label><input id="sdt" readonly></div></div>
     <button class="p" id="save" style="margin-top:18px;width:100%">บันทึกข้อมูล</button>
     <p class="hint" id="smsg" role="status"></p>
   </div>
