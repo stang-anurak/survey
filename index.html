@@ -242,15 +242,16 @@ function unameUI(){var v=$('uname').value.trim(),ok=!!v&&v===UN;$('usave').disab
 $('uname').oninput=unameUI;
 $('usave').onclick=function(){UN=$('uname').value.trim();try{localStorage.setItem('uname',UN)}catch(e){}$('sname').value=UN;unameUI()};
 $('uname').value=UN;$('sname').value=UN;unameUI();
-var gpsW=null;
+var gpsW=null,INAPP=/Line\/|FBAN|FBAV|Instagram|MicroMessenger|GSA\/|Messenger/i.test(navigator.userAgent);
+function tip(){return INAPP?' · ตอนนี้เปิดผ่านแอปอื่น ควรเปิดลิงก์ด้วย Safari เพื่อให้ได้พิกัดแม่นขึ้น':''}
 $('gps').onclick=function(){if(!navigator.geolocation){$('smsg').textContent='เครื่องนี้ไม่รองรับ GPS';return}
  if(gpsW!=null){navigator.geolocation.clearWatch(gpsW);gpsW=null}
- var best=null,tm,btn=$('gps'),fin=false;btn.disabled=true;$('smsg').textContent='กำลังหาตำแหน่ง... (รอสูงสุด 30 วินาที)';
+ var best=null,tm,btn=$('gps'),fin=false;btn.disabled=true;$('smsg').textContent='กำลังหาตำแหน่ง... (รอสูงสุด 30 วินาที)'+tip();
  function setPos(p){$('lat').value=p.coords.latitude.toFixed(6);$('lng').value=p.coords.longitude.toFixed(6);$('acc').value=Math.round(p.coords.accuracy)}
  function done(){if(fin)return;fin=true;clearTimeout(tm);if(gpsW!=null){navigator.geolocation.clearWatch(gpsW);gpsW=null}btn.disabled=false;
   if(!best){$('smsg').textContent='ดึงพิกัดไม่ได้ ตรวจสิทธิ์ตำแหน่ง หรือพิมพ์/ปักหมุดแทน';return}
   setPos(best);var a=Math.round(best.coords.accuracy);
-  $('smsg').textContent=a<=50?'ได้พิกัดแล้ว (ความแม่นยำ '+a+' ม.)':'ได้พิกัดแต่ความแม่นยำต่ำ ('+a+' ม.) ออกที่โล่งแล้วกดอีกครั้ง หรือปักหมุดบนแผนที่แทน'}
+  $('smsg').textContent=a<=50?'ได้พิกัดแล้ว (ความแม่นยำ '+a+' ม.)':'ได้พิกัดแต่ความแม่นยำต่ำ ('+a+' ม.) ออกที่โล่งแล้วกดอีกครั้ง หรือปักหมุดบนแผนที่แทน'+tip()}
  tm=setTimeout(done,30000);
  gpsW=navigator.geolocation.watchPosition(function(p){if(!best||p.coords.accuracy<best.coords.accuracy){best=p;setPos(p)}
   $('smsg').textContent='กำลังหาตำแหน่ง... ความแม่นยำตอนนี้ '+Math.round(best.coords.accuracy)+' ม.';if(best.coords.accuracy<=20)done()},
