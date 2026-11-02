@@ -60,7 +60,7 @@ dialog{border:0;border-radius:10px;padding:18px;max-width:440px;width:92%}dialog
   <button data-p="home" class="on">หน้าหลัก</button><button data-p="survey">สำรวจ</button><button data-p="map">แผนที่</button><button data-p="user">ผู้ใช้งาน</button>
 </nav>
 <main>
-<div class="demo">รอบที่ 3: แก้ไขรายการเต็มรูปแบบและแสดงภาพจริง (ยังไม่มี EXIF พิกัดภาพ ซึ่งอยู่ในรอบที่ 4)</div>
+<div class="demo">รอบที่ 4: อ่าน/เขียน/ตรวจสอบพิกัดภาพ (EXIF) รองรับ HEIC</div>
 
 <section id="p-pick">
   <h2>เลือกโครงการ</h2>
@@ -93,7 +93,7 @@ dialog{border:0;border-radius:10px;padding:18px;max-width:440px;width:92%}dialog
     <div class="row"><button type="button" class="s" id="gps">ดึงพิกัดปัจจุบัน</button><button type="button" class="s" id="pin">ปักหมุดบนแผนที่</button></div>
     <div class="row" style="margin-top:10px"><input id="lat" placeholder="ละติจูด" aria-label="ละติจูด"><input id="lng" placeholder="ลองจิจูด" aria-label="ลองจิจูด"><input id="acc" placeholder="ความแม่นยำ (ม.)" aria-label="ความแม่นยำ"></div>
     <label for="files">ภาพถ่าย (สูงสุด 5 ภาพ ภาพละไม่เกิน 10 MB)</label>
-    <input id="files" type="file" accept="image/*" multiple>
+    <input id="files" type="file" accept="image/*,.heic,.heif" multiple>
     <div id="plistph"></div>
     <button class="p" id="save" style="margin-top:18px;width:100%">บันทึกข้อมูล</button>
     <p class="hint" id="smsg" role="status"></p>
@@ -142,11 +142,13 @@ dialog{border:0;border-radius:10px;padding:18px;max-width:440px;width:92%}dialog
   <div id="edyn"></div>
   <label>พิกัด</label><div class="row"><input id="elat" aria-label="ละติจูด"><input id="elng" aria-label="ลองจิจูด"></div>
   <label>ภาพถ่าย (ติ๊กภาพที่ต้องการลบ)</label><div id="eph"></div>
-  <label for="efiles">เพิ่มภาพ (รวมไม่เกิน 5 ภาพ)</label><input id="efiles" type="file" accept="image/*" multiple>
+  <label for="efiles">เพิ่มภาพ (รวมไม่เกิน 5 ภาพ)</label><input id="efiles" type="file" accept="image/*,.heic,.heif" multiple>
   <div class="row" style="margin-top:14px"><button class="s" id="ecl">ยกเลิก</button><button class="p" id="esv">บันทึกการแก้ไข</button></div>
   <p class="hint" id="em" role="status"></p></dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exifr/7.1.3/full.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.min.js"></script>
 <script>
 var API_URL='https://script.google.com/macros/s/AKfycbwU1LRMxd44giEL_c4HyLVIuQJ6HNevwaP-bJtQGjlEgufpw8BRH0Lk1AdQS-AxMAL2/exec';
 var $=function(i){return document.getElementById(i)};
@@ -158,6 +160,35 @@ function api(a,d){
  d=d||{};d.action=a;if(cur){d.project=cur.code;d.passcode=PASS}
  return fetch(API_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
   if(!j.ok)throw new Error(j.message||'เกิดข้อผิดพลาด');return j})}
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+var DB=null;
+function idb(){return DB||(DB=new Promise(function(ok,no){var q=indexedDB.open('fieldsurvey',1);q.onupgradeneeded=function(){q.result.createObjectStore('kv')};q.onsuccess=function(){ok(q.result)};q.onerror=function(){no(q.error)}}))}
+function kv(m,v){return idb().then(function(d){return new Promise(function(ok,no){var s=d.transaction('kv',m==='get'?'readonly':'readwrite').objectStore('kv'),r=m==='get'?s.get('pend'):s.put(v,'pend');r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}})})}
+function savePend(){try{kv('put',pend).catch(function(){})}catch(e){}}
+function lazy(u,t){return window[t]?Promise.resolve():new Promise(function(ok,no){var s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=function(){no(new Error('โหลดไลบรารีแปลง HEIC ไม่ได้'))};document.head.appendChild(s)})}
+function isHeic(f){return/hei[cf]/i.test(f.type)||/\.hei[cf]$/i.test(f.name)}
+function gb(p){if(p.status!=='Completed')return'';var d=p.d!=null?' ('+p.d+' ม.)':'';
+ if(p.ok)return' <span class="chip Completed">พิกัดภาพตรง'+d+'</span>';
+ if(p.gps==='Camera')return' <span class="chip Failed">พิกัดภาพตรวจไม่ผ่าน'+d+'</span>';
+ if(p.gps==='Survey')return' <span class="chip Uploading">ใช้พิกัดจุดสำรวจ</span>';
+ return' <span class="chip Pending">ไม่มีพิกัด</span>'}
+function gpsExif(la,lo){var G=piexif.GPSIFD,g={};g[G.GPSVersionID]=[2,2,0,0];
+ g[G.GPSLatitudeRef]=la<0?'S':'N';g[G.GPSLatitude]=piexif.GPSHelper.degToDmsRational(Math.abs(la));
+ g[G.GPSLongitudeRef]=lo<0?'W':'E';g[G.GPSLongitude]=piexif.GPSHelper.degToDmsRational(Math.abs(lo));return{GPS:g}}
+// อ่าน EXIF ต้นฉบับ -> แปลง HEIC -> ย่อภาพ -> เขียน EXIF กลับ (canvas ทำ EXIF หาย)
+function prep(file,sLat,sLng){var gps=null;
+ return Promise.resolve().then(function(){return window.exifr?exifr.gps(file).catch(function(){return null}):null})
+ .then(function(g){gps=g&&isFinite(g.latitude)&&isFinite(g.longitude)?g:null;if(!isHeic(file))return file;
+  return lazy('https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js','heic2any').then(function(){
+   return heic2any({blob:file,toType:'image/jpeg',quality:.9})}).then(function(b){return Array.isArray(b)?b[0]:b})})
+ .then(function(blob){return resize(blob,file.name)})
+ .then(function(url){var src='None',la=null,lo=null,a=parseFloat(sLat),b=parseFloat(sLng);
+  if(gps){src='Camera';la=gps.latitude;lo=gps.longitude}else if(isFinite(a)&&isFinite(b)){src='Survey';la=a;lo=b}
+  if(src!=='None'&&window.piexif){try{url=piexif.insert(piexif.dump(gpsExif(la,lo)),url)}catch(e){if(src==='Camera')src='None'}}
+  else if(src!=='None')src='None';
+  return{data:url.split(',')[1],lat:la,lng:lo,src:src}})}
+function csvT(v){v=String(v==null?'':v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return'"'+v.replace(/"/g,'""')+'"'}
 function toRow(o){return[o.id,o.type,o.surveyor||'-',o.status,o.photoDone,o.lat,o.lng,o.desc||'',o.at,o.photoTotal,o.custom]}
 function fmt(t){var d=new Date(t);return isNaN(d)?'-':d.toLocaleDateString('th-TH')}
 
@@ -168,12 +199,12 @@ document.querySelectorAll('nav button').forEach(function(b){b.onclick=function()
 
 function plist(){var q=$('q').value.trim().toLowerCase(),h='',n=0;
  PROJECTS.filter(function(p){return(p.code+p.name).toLowerCase().indexOf(q)>-1}).forEach(function(p){n++;
-  h+='<button class="card proj" data-c="'+p.code+'"><b>'+p.code+'</b><br>'+p.name+'</button>'});
+  h+='<button class="card proj" data-c="'+esc(p.code)+'"><b>'+esc(p.code)+'</b><br>'+esc(p.name)+'</button>'});
  $('plist').innerHTML=h;$('pempty').hidden=n>0||!PROJECTS.length;$('s-proj').textContent=PROJECTS.length;
  document.querySelectorAll('.proj').forEach(function(b){b.onclick=function(){ask(b.dataset.c)}})}
 $('q').oninput=plist;
 function loadProjects(){api('projects').then(function(r){PROJECTS=r.projects;plist()}).catch(function(e){
- $('plist').innerHTML='<p class="hint">โหลดรายการโครงการไม่ได้: '+e.message+'</p>'})}
+ $('plist').innerHTML='<p class="hint">โหลดรายการโครงการไม่ได้: '+esc(e.message)+'</p>'})}
 
 var pending=null;
 function ask(c){pending=PROJECTS.filter(function(p){return p.code===c})[0];$('pwt').textContent=pending.code+' '+pending.name;$('pwi').value='';$('pw').showModal();$('pwi').focus()}
@@ -181,11 +212,11 @@ $('pwf').onsubmit=function(e){if(!(e.submitter&&e.submitter.value==='ok'&&$('pwi
  PASS=$('pwi').value;cur=pending;
  api('login').then(function(r){enter(r.project,r.fields)}).catch(function(err){cur=null;PASS='';alert(err.message)})};
 function enter(p,fields){cur=p;$('sub').textContent=p.code+' · '+p.name;$('nav').classList.remove('hide');$('chg').classList.remove('hide');
- $('stype').innerHTML=p.types.map(function(t){return'<option>'+t+'</option>'}).join('');
+ $('stype').innerHTML=p.types.map(function(t){return'<option>'+esc(t)+'</option>'}).join('');
  $('dyn').innerHTML=fields.map(function(f){var id='f_'+f.key,c;
-  if(f.type==='select')c='<select id="'+id+'"><option value="">เลือก</option>'+f.options.map(function(o){return'<option>'+o+'</option>'}).join('')+'</select>';
+  if(f.type==='select')c='<select id="'+id+'"><option value="">เลือก</option>'+f.options.map(function(o){return'<option>'+esc(o)+'</option>'}).join('')+'</select>';
   else c='<input id="'+id+'" type="'+(f.type==='number'?'number':'text')+'">';
-  return'<label for="'+id+'">'+f.label+(f.required?' *':'')+'</label>'+c}).join('');
+  return'<label for="'+id+'">'+esc(f.label)+(f.required?' *':'')+'</label>'+c}).join('');
  cur.fields=fields;$('uproj').textContent=p.code+' '+p.name;if(map)map.setView([p.lat,p.lng],9);
  newSurvey();show('home');loadSurveys()}
 $('chg').onclick=$('lock').onclick=function(){cur=null;PASS='';S=[];$('nav').classList.add('hide');$('chg').classList.add('hide');$('sub').textContent='เลือกโครงการเพื่อเริ่มงาน';show('pick')};
@@ -193,7 +224,7 @@ function loadSurveys(){return api('listSurveys').then(function(r){S=r.surveys.ma
 
 function home(){$('hname').textContent=cur?cur.name:'';var d=S.filter(function(r){return r[3]==='Completed'}).length;
  $('s-all').textContent=S.length;$('s-done').textContent=d;$('s-wait').textContent=S.length-d;
- $('recent').innerHTML=S.slice(0,5).map(function(r){return'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><span class="chip '+r[3]+'">'+r[3]+'</span></td></tr>'}).join('')||'<tr><td colspan="4">ยังไม่มีรายการ</td></tr>'}
+ $('recent').innerHTML=S.slice(0,5).map(function(r){return'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td><span class="chip '+r[3]+'">'+r[3]+'</span></td></tr>'}).join('')||'<tr><td colspan="4">ยังไม่มีรายการ</td></tr>'}
 
 function newSurvey(){$('sid').value='S-'+cur.code.replace(/[^A-Za-z0-9]/g,'')+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
  $('sdt').value=new Date().toLocaleString('th-TH');$('smsg').textContent='';$('sdesc').value='';$('files').value='';$('plistph').innerHTML='';$('lat').value=$('lng').value=$('acc').value='';
@@ -206,17 +237,17 @@ $('gps').onclick=function(){if(!navigator.geolocation){$('smsg').textContent='�
 $('pin').onclick=function(){pin=true;show('map');alert('แตะบนแผนที่เพื่อปักหมุด พิกัดจะถูกใส่ในฟอร์ม')};
 
 $('files').onchange=function(){var f=Array.prototype.slice.call(this.files,0,5),h='';
- f.forEach(function(x,i){var big=x.size>10*1048576;h+='<div class="ph"><i>ภาพ '+(i+1)+'</i><div style="flex:1"><div>'+x.name+' · '+(x.size/1048576).toFixed(1)+' MB '+(big?'<span class="chip Failed">เกิน 10 MB</span>':'<span class="chip Pending" id="st'+i+'">Pending</span>')+'</div><div class="bar"><div id="b'+i+'"></div></div></div></div>'});
+ f.forEach(function(x,i){var big=x.size>10*1048576;h+='<div class="ph"><i>ภาพ '+(i+1)+'</i><div style="flex:1"><div>'+esc(x.name)+' · '+(x.size/1048576).toFixed(1)+' MB '+(big?'<span class="chip Failed">เกิน 10 MB</span>':'<span class="chip Pending" id="st'+i+'">Pending</span>')+'</div><div class="bar"><div id="b'+i+'"></div></div></div></div>'});
  $('plistph').innerHTML=h};
-function resize(file){return new Promise(function(ok,no){var im=new Image(),u=URL.createObjectURL(file);
- im.onload=function(){var s=Math.min(1,2000/Math.max(im.width,im.height)),c=document.createElement('canvas');
-  c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.85).split(',')[1])};
- im.onerror=function(){no(new Error('อ่านภาพ '+file.name+' ไม่ได้ (รอบนี้รองรับ JPEG/PNG)'))};im.src=u})}
+function resize(file,name){return new Promise(function(ok,no){var im=new Image(),u=URL.createObjectURL(file);
+im.onload=function(){var s=Math.min(1,2000/Math.max(im.width,im.height)),c=document.createElement('canvas');
+ c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.85))};
+im.onerror=function(){no(new Error('อ่านภาพ '+name+' ไม่ได้ (รองรับ JPEG/PNG/HEIC)'))};im.src=u})}
 function mark(i,s,w){var e=$('st'+i),b=$('b'+i);if(e){e.className='chip '+s;e.textContent=s}if(b&&w!=null)b.style.width=w+'%'}
 function sendAll(sid,list,ui){var fail=[],i=0;
  return new Promise(function(done){(function next(){if(i>=list.length)return done(fail);
   var it=list[i],k=i++;if(ui)mark(k,'Uploading',40);
-  api('uploadPhoto',{surveyId:sid,photoId:it.photoId,data:it.data}).then(function(){if(ui)mark(k,'Completed',100)})
+  api('uploadPhoto',{surveyId:sid,photoId:it.photoId,data:it.data,photoLat:it.lat,photoLng:it.lng,gpsSource:it.src}).then(function(){if(ui)mark(k,'Completed',100)})
   .catch(function(){fail.push(it);if(ui)mark(k,'Failed',100)}).then(next)})()})}
 
 $('save').onclick=function(){
@@ -225,14 +256,14 @@ $('save').onclick=function(){
  if(files.some(function(f){return f.size>10*1048576})){$('smsg').textContent='มีภาพเกิน 10 MB กรุณาเลือกใหม่';return}
  var custom={};(cur.fields||[]).forEach(function(f){custom[f.key]=$('f_'+f.key).value});
  var sid=$('sid').value;$('save').disabled=true;$('smsg').textContent='กำลังเตรียมภาพ...';
- Promise.all(files.map(resize)).then(function(data){
-  var list=files.map(function(f,i){return{photoId:'P'+sid.slice(2)+'-'+(i+1),name:f.name,data:data[i]}});
+ Promise.all(files.map(function(f){return prep(f,$('lat').value,$('lng').value)})).then(function(data){
+  var list=files.map(function(f,i){return{photoId:'P'+sid.slice(2)+'-'+(i+1),name:f.name,data:data[i].data,lat:data[i].lat,lng:data[i].lng,src:data[i].src}});
   $('smsg').textContent='กำลังบันทึกรายการ...';
   return api('createSurvey',{surveyId:sid,type:$('stype').value,surveyor:$('sname').value.trim(),description:$('sdesc').value.trim(),
    lat:$('lat').value,lng:$('lng').value,accuracy:$('acc').value,custom:custom,photos:list.map(function(x){return{photoId:x.photoId,name:x.name}})})
   .then(function(r){$('smsg').textContent='กำลังอัปโหลดภาพ...';
    return sendAll(sid,list,true).then(function(fail){
-    if(fail.length)pend[sid]=fail;
+    if(fail.length){pend[sid]=fail;savePend()}
     $('smsg').textContent='บันทึกแล้ว รหัส '+sid+(r.editCode?' · รหัสแก้ไข: '+r.editCode+' (แสดงครั้งเดียว จดไว้)':'')+(fail.length?' · ส่งภาพไม่ครบ '+fail.length+' ภาพ กด Retry ในหน้าแผนที่':'');
     if(!fail.length)setTimeout(function(){},0);return loadSurveys()})})
  }).catch(function(e){$('smsg').textContent='ไม่สำเร็จ: '+e.message}).then(function(){$('save').disabled=false})};
@@ -248,39 +279,39 @@ $('base').onchange=function(){var v=$('base').value;map.removeLayer(tile[v==='os
 function vis(){var st=$('fst').value,q=$('fq').value.toLowerCase();return S.filter(function(r){return(!st||r[3]===st)&&(r[0]+r[7]).toLowerCase().indexOf(q)>-1})}
 function draw(){if(!layer)return;layer.clearLayers();var v=vis();
  v.forEach(function(r){L.circleMarker([r[5],r[6]],{radius:9,color:'#fff',weight:2,fillColor:col[r[3]],fillOpacity:1}).bindTooltip(r[0]).on('click',function(){detail(r)}).addTo(layer)});
- $('rows').innerHTML=v.map(function(r){return'<tr class="r" data-i="'+S.indexOf(r)+'"><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+fmt(r[8])+'</td><td>'+r[4]+'/'+r[9]+'</td><td><span class="chip '+r[3]+'">'+r[3]+'</span></td></tr>'}).join('')||'<tr><td colspan="5">ไม่พบรายการ</td></tr>';
+ $('rows').innerHTML=v.map(function(r){return'<tr class="r" data-i="'+S.indexOf(r)+'"><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+fmt(r[8])+'</td><td>'+r[4]+'/'+r[9]+'</td><td><span class="chip '+r[3]+'">'+r[3]+'</span></td></tr>'}).join('')||'<tr><td colspan="5">ไม่พบรายการ</td></tr>';
  document.querySelectorAll('tr.r').forEach(function(t){t.onclick=function(){detail(S[t.dataset.i])}})}
 $('fst').onchange=$('fq').oninput=draw;
 
 function b64url(b64){var s=atob(b64),a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return URL.createObjectURL(new Blob([a],{type:'image/jpeg'}))}
 function loadImgs(list,sid,k){k=k||0;if(k>=list.length||!det||det[0]!==sid)return;var p=list[k];
  if(p.status!=='Completed')return loadImgs(list,sid,k+1);
- api('getPhoto',{surveyId:sid,photoId:p.id}).then(function(x){var e=$('im'+k);if(e&&det&&det[0]===sid){var u=b64url(x.data);e.innerHTML='<a href="'+u+'" target="_blank"><img class="th" alt="'+p.name+'" src="'+u+'"></a>'}})
+ api('getPhoto',{surveyId:sid,photoId:p.id}).then(function(x){var e=$('im'+k);if(e&&det&&det[0]===sid){var u=b64url(x.data);e.innerHTML='<a href="'+u+'" target="_blank"><img class="th" alt="'+esc(p.name)+'" src="'+u+'"></a>'}})
  .catch(function(){}).then(function(){loadImgs(list,sid,k+1)})}
 function detail(r){det=r;det.photos=null;$('dt').textContent=r[0]+' · '+r[1];$('dm').textContent='';
- var c=r[10]||{},extra=(cur.fields||[]).map(function(f){return c[f.key]?'<p class="hint">'+f.label+': '+c[f.key]+'</p>':''}).join('');
- $('db').innerHTML='<p><span class="chip '+r[3]+'">'+r[3]+'</span> ผู้สำรวจ: '+r[2]+' · '+fmt(r[8])+'</p><p>'+r[7]+'</p>'+extra+'<p class="hint">พิกัด '+r[5]+', '+r[6]+'</p><p><b>ภาพถ่าย '+r[4]+'/'+r[9]+' ภาพ</b></p><div id="dph"></div>'+
+ var c=r[10]||{},extra=(cur.fields||[]).map(function(f){return c[f.key]?'<p class="hint">'+esc(f.label)+': '+esc(c[f.key])+'</p>':''}).join('');
+ $('db').innerHTML='<p><span class="chip '+r[3]+'">'+r[3]+'</span> ผู้สำรวจ: '+esc(r[2])+' · '+fmt(r[8])+'</p><p>'+esc(r[7])+'</p>'+extra+'<p class="hint">พิกัด '+r[5]+', '+r[6]+'</p><p><b>ภาพถ่าย '+r[4]+'/'+r[9]+' ภาพ</b></p><div id="dph"></div>'+
   (r[3]!=='Completed'?'<button class="p" id="rt" style="margin-top:10px">Retry อัปโหลดภาพที่ค้าง</button>':'');
  api('getSurvey',{surveyId:r[0]}).then(function(x){if(det!==r)return;det.photos=x.photos;
-  $('dph').innerHTML=x.photos.map(function(p,i){return'<div class="ph"><div id="im'+i+'" style="flex:none"><i>ภาพ '+(i+1)+'</i></div><span class="hint">'+p.name+' <span class="chip '+p.status+'">'+p.status+'</span></span></div>'}).join('');
+  $('dph').innerHTML=x.photos.map(function(p,i){return'<div class="ph"><div id="im'+i+'" style="flex:none"><i>ภาพ '+(i+1)+'</i></div><span class="hint">'+esc(p.name)+' <span class="chip '+esc(p.status)+'">'+esc(p.status)+'</span>'+gb(p)+'</span></div>'}).join('');
   loadImgs(x.photos,r[0])}).catch(function(){});
  if($('rt'))$('rt').onclick=function(){var l=pend[r[0]];
   if(!l){$('dm').textContent='ภาพที่ค้างไม่อยู่ในหน้านี้แล้ว (รีเฟรชหน้า) ให้ลบภาพที่ค้างแล้วเพิ่มภาพใหม่ในหน้าแก้ไข';return}
   $('dm').textContent='กำลังส่งภาพที่ค้าง...';
-  sendAll(r[0],l,false).then(function(f){if(f.length)pend[r[0]]=f;else delete pend[r[0]];$('dm').textContent=f.length?'ยังส่งไม่ครบ '+f.length+' ภาพ':'ส่งครบแล้ว';loadSurveys()})};
+  sendAll(r[0],l,false).then(function(f){if(f.length)pend[r[0]]=f;else delete pend[r[0]];savePend();$('dm').textContent=f.length?'ยังส่งไม่ครบ '+f.length+' ภาพ':'ส่งครบแล้ว';loadSurveys()})};
  $('det').showModal()}
 $('dcl').onclick=function(){$('det').close()};
 
 $('ded').onclick=function(){var r=det;if(!r.photos){$('dm').textContent='กำลังโหลดรายการภาพ รอสักครู่แล้วกดอีกครั้ง';return}
  $('ecode').value='';$('efiles').value='';$('em').textContent='';
- $('etype').innerHTML=cur.types.map(function(t){return'<option'+(t===r[1]?' selected':'')+'>'+t+'</option>'}).join('');
+ $('etype').innerHTML=cur.types.map(function(t){return'<option'+(t===r[1]?' selected':'')+'>'+esc(t)+'</option>'}).join('');
  $('esur').value=r[2]==='-'?'':r[2];$('edesc').value=r[7];$('elat').value=r[5];$('elng').value=r[6];
  var c=r[10]||{};
  $('edyn').innerHTML=(cur.fields||[]).map(function(f){var id='e_'+f.key,v=c[f.key]||'',x;
-  if(f.type==='select')x='<select id="'+id+'"><option value="">เลือก</option>'+f.options.map(function(o){return'<option'+(o===v?' selected':'')+'>'+o+'</option>'}).join('')+'</select>';
-  else x='<input id="'+id+'" type="'+(f.type==='number'?'number':'text')+'" value="'+String(v).replace(/"/g,'&quot;')+'">';
-  return'<label for="'+id+'">'+f.label+'</label>'+x}).join('');
- $('eph').innerHTML=r.photos.map(function(p){return'<label style="font-weight:400;margin:6px 0"><input type="checkbox" class="rm" value="'+p.id+'" style="width:auto"> '+p.name+'</label>'}).join('')||'<p class="hint">ยังไม่มีภาพ</p>';
+  if(f.type==='select')x='<select id="'+id+'"><option value="">เลือก</option>'+f.options.map(function(o){return'<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>'}).join('')+'</select>';
+  else x='<input id="'+id+'" type="'+(f.type==='number'?'number':'text')+'" value="'+esc(v)+'">';
+  return'<label for="'+id+'">'+esc(f.label)+'</label>'+x}).join('');
+ $('eph').innerHTML=r.photos.map(function(p){return'<label style="font-weight:400;margin:6px 0"><input type="checkbox" class="rm" value="'+esc(p.id)+'" style="width:auto"> '+esc(p.name)+'</label>'}).join('')||'<p class="hint">ยังไม่มีภาพ</p>';
  $('ed').showModal()};
 $('ecl').onclick=function(){$('ed').close()};
 $('esv').onclick=function(){var code=$('ecode').value.trim();if(!code){$('em').textContent='กรอกรหัสแก้ไข';return}
@@ -289,21 +320,24 @@ $('esv').onclick=function(){var code=$('ecode').value.trim();if(!code){$('em').t
  if(files.some(function(f){return f.size>10*1048576})){$('em').textContent='มีภาพเกิน 10 MB';return}
  var custom={};(cur.fields||[]).forEach(function(f){custom[f.key]=$('e_'+f.key).value});
  var sid=det[0];$('esv').disabled=true;$('em').textContent='กำลังบันทึก...';
- Promise.all(files.map(resize)).then(function(data){
-  var add=files.map(function(f,i){return{photoId:'P'+sid.slice(2)+'-e'+Date.now().toString(36)+i,name:f.name,data:data[i]}});
+ Promise.all(files.map(function(f){return prep(f,$('elat').value,$('elng').value)})).then(function(data){
+  var add=files.map(function(f,i){return{photoId:'P'+sid.slice(2)+'-e'+Date.now().toString(36)+i,name:f.name,data:data[i].data,lat:data[i].lat,lng:data[i].lng,src:data[i].src}});
   return api('updateSurvey',{surveyId:sid,editCode:code,type:$('etype').value,surveyor:$('esur').value.trim(),description:$('edesc').value.trim(),
    lat:$('elat').value,lng:$('elng').value,custom:custom,removePhotoIds:rm,addPhotos:add.map(function(x){return{photoId:x.photoId,name:x.name}})})
   .then(function(){return sendAll(sid,add,false)}).then(function(fail){
-   if(fail.length)pend[sid]=(pend[sid]||[]).concat(fail);
+   if(fail.length){pend[sid]=(pend[sid]||[]).concat(fail);savePend()}
    $('em').textContent=fail.length?'บันทึกแล้ว แต่ส่งภาพไม่ครบ '+fail.length+' ภาพ กด Retry ที่หน้ารายละเอียด':'บันทึกการแก้ไขแล้ว';
    return loadSurveys().then(function(){setTimeout(function(){$('ed').close();$('det').close()},900)})})
  }).catch(function(e){$('em').textContent=e.message}).then(function(){$('esv').disabled=false})};
 $('ddel').onclick=function(){var c=prompt('กรอกรหัสแก้ไขเพื่อลบรายการนี้');if(!c||!confirm('ลบรายการ '+det[0]+' ?'))return;
- api('deleteSurvey',{surveyId:det[0],editCode:c}).then(function(){$('det').close();loadSurveys()}).catch(function(e){$('dm').textContent=e.message})};
+ api('deleteSurvey',{surveyId:det[0],editCode:c}).then(function(){delete pend[det[0]];savePend();$('det').close();loadSurveys()}).catch(function(e){$('dm').textContent=e.message})};
 
 function dl(name,txt,mime){var a=document.createElement('a');a.href='data:'+mime+';charset=utf-8,'+encodeURIComponent('\ufeff'+txt);a.download=name;a.click()}
-$('csv').onclick=function(){dl('surveys.csv',['id,type,surveyor,status,photos,lat,lng,description'].concat(vis().map(function(r){return[r[0],r[1],r[2],r[3],r[4]+'/'+r[9],r[5],r[6],'"'+String(r[7]).replace(/"/g,'""')+'"'].join(',')})).join('\n'),'text/csv')};
+$('csv').onclick=function(){var f=cur.fields||[];
+ dl('surveys.csv',[['id','type','surveyor','status','photos','lat','lng','description'].concat(f.map(function(x){return x.label})).map(csvT).join(',')].concat(vis().map(function(r){var c=r[10]||{};
+  return[csvT(r[0]),csvT(r[1]),csvT(r[2]),csvT(r[3]),csvT(r[4]+'/'+r[9]),r[5],r[6],csvT(r[7])].concat(f.map(function(x){return csvT(c[x.key])})).join(',')})).join('\n'),'text/csv')};
 $('gj').onclick=function(){dl('surveys.geojson',JSON.stringify({type:'FeatureCollection',features:vis().map(function(r){return{type:'Feature',geometry:{type:'Point',coordinates:[r[6],r[5]]},properties:{id:r[0],type:r[1],status:r[3]}}})}),'application/geo+json')};
+kv('get').then(function(v){if(v)for(var k in v)if(!pend[k])pend[k]=v[k]}).catch(function(){});
 loadProjects();
 </script>
 </body>
