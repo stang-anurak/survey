@@ -231,9 +231,19 @@ function newSurvey(){$('sid').value='S-'+cur.code.replace(/[^A-Za-z0-9]/g,'')+'-
  (cur.fields||[]).forEach(function(f){$('f_'+f.key).value=''})}
 $('uname').oninput=function(){$('sname').value=$('uname').value};
 $('usave').onclick=function(){$('sname').value=$('uname').value;$('umsg').textContent='บันทึกชื่อแล้ว'};
-$('gps').onclick=function(){if(!navigator.geolocation){$('smsg').textContent='เครื่องนี้ไม่รองรับ GPS';return}$('smsg').textContent='กำลังหาตำแหน่ง...';
- navigator.geolocation.getCurrentPosition(function(p){$('lat').value=p.coords.latitude.toFixed(6);$('lng').value=p.coords.longitude.toFixed(6);$('acc').value=Math.round(p.coords.accuracy);$('smsg').textContent='ได้พิกัดแล้ว'},
- function(){$('smsg').textContent='ดึงพิกัดไม่ได้ ตรวจสิทธิ์ตำแหน่ง หรือพิมพ์/ปักหมุดแทน'},{enableHighAccuracy:true,timeout:20000})};
+var gpsW=null;
+$('gps').onclick=function(){if(!navigator.geolocation){$('smsg').textContent='เครื่องนี้ไม่รองรับ GPS';return}
+ if(gpsW!=null){navigator.geolocation.clearWatch(gpsW);gpsW=null}
+ var best=null,tm,btn=$('gps'),fin=false;btn.disabled=true;$('smsg').textContent='กำลังหาตำแหน่ง... (รอสูงสุด 30 วินาที)';
+ function setPos(p){$('lat').value=p.coords.latitude.toFixed(6);$('lng').value=p.coords.longitude.toFixed(6);$('acc').value=Math.round(p.coords.accuracy)}
+ function done(){if(fin)return;fin=true;clearTimeout(tm);if(gpsW!=null){navigator.geolocation.clearWatch(gpsW);gpsW=null}btn.disabled=false;
+  if(!best){$('smsg').textContent='ดึงพิกัดไม่ได้ ตรวจสิทธิ์ตำแหน่ง หรือพิมพ์/ปักหมุดแทน';return}
+  setPos(best);var a=Math.round(best.coords.accuracy);
+  $('smsg').textContent=a<=50?'ได้พิกัดแล้ว (ความแม่นยำ '+a+' ม.)':'ได้พิกัดแต่ความแม่นยำต่ำ ('+a+' ม.) ออกที่โล่งแล้วกดอีกครั้ง หรือปักหมุดบนแผนที่แทน'}
+ tm=setTimeout(done,30000);
+ gpsW=navigator.geolocation.watchPosition(function(p){if(!best||p.coords.accuracy<best.coords.accuracy){best=p;setPos(p)}
+  $('smsg').textContent='กำลังหาตำแหน่ง... ความแม่นยำตอนนี้ '+Math.round(best.coords.accuracy)+' ม.';if(best.coords.accuracy<=20)done()},
+  function(){done()},{enableHighAccuracy:true,maximumAge:0,timeout:30000})};
 $('pin').onclick=function(){pin=true;show('map');alert('แตะบนแผนที่เพื่อปักหมุด พิกัดจะถูกใส่ในฟอร์ม')};
 
 $('files').onchange=function(){var f=Array.prototype.slice.call(this.files,0,5),h='';
